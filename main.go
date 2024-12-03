@@ -3,56 +3,44 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	serv := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+	listenAddr := ":8080"
+	if val, ok := os.LookupEnv("FUNCTIONS_CUSTOMHANDLER_PORT"); ok {
+		listenAddr = ":" + val
 	}
-	mux.HandleFunc("/health", checkHealth)
-	mux.HandleFunc("/c2", getBotNet)
+	http.HandleFunc("/api/health", getBotNet)
 	fmt.Println("Starting server...")
-	log.Fatal(serv.ListenAndServe())
+	log.Fatal(http.ListenAndServe(listenAddr, nil))
 }
 
 type botBody struct {
 	Test string `json:"test"`
 }
 
-func checkHealth(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("Health Queried!")
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	int, err := io.WriteString(w, "OK")
-	if err != nil {
-		log.Fatal(err, int)
-	}
-}
-
 func getBotNet(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("Bot Phoning Home!")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	var err error
-	var int int
-	if req.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		int, err = io.WriteString(w, "Use POST!")
-	} else {
+	if req.Method == "GET" {
 		w.WriteHeader(http.StatusOK)
-		int, err = io.WriteString(w, "OK")
-	}
-	if err != nil {
-		log.Fatal(err, int)
+		fmt.Fprint(w, "C2 is Alive")
+		return
+	} else if req.Method == "POST" {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Received")
+	} else {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprint(w, "Wrong Method")
+		return
 	}
 	var bb botBody
-	err = json.NewDecoder(req.Body).Decode(&bb)
+	err := json.NewDecoder(req.Body).Decode(&bb)
 	if err != nil {
-		log.Fatal(err, int)
+		log.Fatal(err)
 	}
 	fmt.Printf("%+v\n", bb)
 }
