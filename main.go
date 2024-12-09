@@ -23,16 +23,20 @@ type botBody struct {
 }
 
 func getBotNet(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("Bot Phoning Home!")
+	log.Println("Bot Phoning Home!")
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if req.Method == "GET" {
+		log.Println("Bot Checking Home!")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "C2 is Alive")
 		return
 	} else if req.Method == "POST" {
+		log.Println("Bot Sending Data!")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "Received")
 	} else {
+		log.Println("Wrong Method Hit! DANGER WE'VE BEEN MADE")
+		w.WriteHeader(http.StatusOK)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprint(w, "Wrong Method")
 		return
@@ -42,5 +46,5 @@ func getBotNet(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%+v\n", bb)
+	log.Printf("%+v", bb)
 }
